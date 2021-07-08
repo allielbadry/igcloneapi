@@ -70,6 +70,20 @@ CREATE TABLE follows(
     PRIMARY KEY(follower_id, followee_id)
 );
 
+-- unfollow table
+CREATE TABLE unfollows(
+    follower_id INTEGER NOT NULL,
+    followee_id INTEGER NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    FOREIGN KEY(follower_id)
+    REFERENCES users(id)
+    ON DELETE CASCADE,
+    FOREIGN KEY(followee_id)
+    REFERENCES users(id)
+    ON DELETE CASCADE,
+    PRIMARY KEY(follower_id, followee_id)
+);
+
 -- tag schema
 CREATE TABLE tags(
     id INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -96,3 +110,35 @@ CREATE TABLE photo_tags(
 --  on users.id = likes.user_id
 -- group by users.id
 -- having total = (select count(*) from photos);
+
+
+-- pervent self-follow
+DELIMITER $$
+
+CREATE TRIGGER self_follow
+    BEFORE INSERT ON follows FOR EACH ROW
+    BEGIN
+      IF NEW.follower_id = NEW.followee_id
+      THEN
+        SIGNAL SQLSTATE '45000'
+            SET message_text = 'You cant follow your self';
+      END IF;
+    END;
+
+$$
+DELIMITER ;
+
+
+-- tracking unfollow
+DELIMITER $$
+
+CREATE TRIGGER capture_unfollow
+    AFTER DELETE ON follows FOR EACH ROW
+    BEGIN
+      INSERT INTO unfollows
+      SET follower_id = OLD.follower_id,
+          followee_id = OLD.followee_id;
+    END;
+
+$$
+DELIMITER

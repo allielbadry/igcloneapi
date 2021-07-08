@@ -62,7 +62,7 @@ const PUB_KEY = fs.readFileSync(pubKeyPath, "utf8");
 // function to create user object
 function isAuth(req, res, next) {
   // get the token from the headers
-  const fullToken = req.headers.authorization.spli(" ");
+  const fullToken = req.headers.authorization.split(" ");
   // get the token without the (Bearer)
   const token = fullToken[1];
   if (fullToken[0] == "Bearer" && token.match(/\S*.S*.S*/)) {
